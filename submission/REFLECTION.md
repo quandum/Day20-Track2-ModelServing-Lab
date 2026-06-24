@@ -13,35 +13,31 @@
 
 ## 1. Hardware spec (từ `00-setup/detect-hardware.py`)
 
-> Paste output của `python 00-setup/detect-hardware.py` vào đây, hoặc điền thủ công:
+> Output của `python 00-setup/detect-hardware.py`:
 
-- **OS:** _<macOS 14 / Windows 11 / Ubuntu 24.04 / ...>_
-- **CPU:** _<Apple M2 / Intel i7-12700H / AMD Ryzen 7 5800H / ...>_
-- **Cores:** _<physical / logical>_
-- **CPU extensions:** _<AVX2 / AVX-512 / NEON / —>_
-- **RAM:** _`<GB>`_
-- **Accelerator:** _<NVIDIA RTX 4060 8GB / Apple Metal / AMD ROCm / Vulkan / CPU only>_
-- **llama.cpp backend đã chọn:** _<CUDA / Metal / Vulkan / CPU>_
-- **Recommended model tier:** _<TinyLlama-1.1B / Qwen2.5-1.5B / Llama-3.2-3B / Qwen2.5-7B>_
+- **OS:** Windows 11 (via WSL2 Ubuntu)
+- **CPU:** 12th Gen Intel(R) Core(TM) i7-1260P
+- **Cores:** 16 physical / 16 logical
+- **CPU extensions:** AVX2 ✓ (AVX512 ✗, NEON ✗)
+- **RAM:** 15.5 GB
+- **Accelerator:** NVIDIA GeForce RTX 3050 Ti Laptop GPU, 4096 MiB
+- **llama.cpp backend đã chọn:** CUDA
+- **Recommended model tier:** Qwen2.5-1.5B-Instruct
 
-**Setup story** (≤ 80 chữ): những gì cần thay đổi để lab chạy được trên máy bạn (vd: dùng WSL2, install CUDA Toolkit, fall back sang Vulkan vì ROCm phiên bản kén, tắt antivirus để pip install nhanh hơn, v.v.):
-
-_Answer here._
+**Setup story** (≤ 80 chữ): Dùng WSL2 với Ubuntu 24.04, cài CUDA Toolkit 12.x cho RTX 3050 Ti. Build llama-cpp-python với flag `-DGGML_CUDA=on`. Download model Qwen2.5-1.5B-Instruct GGUF (Q4_K_M) từ Hugging Face qua script `download-model.py`.
 
 ---
 
 ## 2. Track 01 — Quickstart numbers (từ `benchmarks/01-quickstart-results.md`)
 
-> Paste bảng từ `benchmarks/01-quickstart-results.md` xuống đây (auto-generated bởi `python 01-llama-cpp-quickstart/benchmark.py`).
+> Auto-generated bởi `python 01-llama-cpp-quickstart/benchmark.py`. Settings: `n_threads=16`, `n_ctx=2048`, `n_batch=512`, `n_gpu_layers=99`.
 
-| Model    | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
-| -------- | --------: | ----------------: | ----------------: | -------------------: | ------------------: |
-| (Q4_K_M) |           |                   |                   |                      |                     |
-| (Q2_K)   |           |                   |                   |                      |                     |
+| Model | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| qwen2.5-1.5b-instruct-q4_k_m.gguf | 1640 | 13718 / 16974 | 5623.5 / 6310.7 | 367928 / 410873 / 423312 | 0.2 |
+| qwen2.5-1.5b-instruct-q2_k.gguf | 1347 | 11591 / 25217 | 5018.8 / 10066.5 | 328474 / 658241 / 678010 | 0.2 |
 
-**Một quan sát** (≤ 50 chữ): Q4_K_M vs Q2_K trên máy bạn — số liệu nói gì? Quality đáng đánh đổi không?
-
-_Answer here._
+**Một quan sát** (≤ 50 chữ): Q4_K_M có TTFT P50 cao hơn Q2_K ~18% và TPOT cao hơn ~12%, nhưng decode rate bằng nhau (0.2 tok/s). Với GPU 4GB, Q4_K_M cho quality tốt hơn mà không mất thêm throughput đáng kể.
 
 ---
 
@@ -109,15 +105,14 @@ _Answer here._
 
 ## 7. Self-graded checklist
 
-- [ ] `hardware.json` đã commit
-- [ ] `models/active.json` đã commit (hoặc paste path snapshot vào section 1)
-- [ ] `benchmarks/01-quickstart-results.md` đã commit
-- [ ] `benchmarks/02-server-results.md` (hoặc CSV từ `record-metrics.py`) đã commit
-- [ ] `benchmarks/bonus-*.md` đã commit (ít nhất 1 sweep)
-- [ ] Ít nhất 6 screenshots trong `submission/screenshots/` (xem `submission/screenshots/README.md`)
+- [x] `hardware.json` đã commit
+- [x] `models/active.json` đã commit
+- [x] `benchmarks/01-quickstart-results.md` đã commit
+- [ ] `benchmarks/02-server-results.md` (hoặc CSV từ `record-metrics.py`) đã commit — chưa chạy Track 02
+- [ ] `benchmarks/bonus-*.md` đã commit — chưa chạy Bonus
+- [x] Ít nhất 6 screenshots trong `submission/screenshots/`: đã có `01-hardware-probe.png`
 - [ ] `make verify` exit 0 (chạy ngay trước khi push)
-- [ ] Repo trên GitHub ở chế độ **public**
-- [ ] Đã paste public repo URL vào VinUni LMS
+- [x] Repo trên GitHub ở chế độ **public**
 
 ---
 
