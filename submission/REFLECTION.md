@@ -4,9 +4,10 @@
 
 ---
 
-**Họ Tên:** _<Họ Tên>_
-**Cohort:** _<A20-K1 / A20-K2 / ...>_
-**Ngày submit:** _<YYYY-MM-DD>_
+**Họ Tên:** Trần Mạnh Chánh Quân
+**Mã học viên:** 2A202600786
+**Cohort:**  _A20-K2_
+**Ngày submit:** 2026-06-24
 
 ---
 
@@ -18,7 +19,7 @@
 - **CPU:** _<Apple M2 / Intel i7-12700H / AMD Ryzen 7 5800H / ...>_
 - **Cores:** _<physical / logical>_
 - **CPU extensions:** _<AVX2 / AVX-512 / NEON / —>_
-- **RAM:** _<GB>_
+- **RAM:** _`<GB>`_
 - **Accelerator:** _<NVIDIA RTX 4060 8GB / Apple Metal / AMD ROCm / Vulkan / CPU only>_
 - **llama.cpp backend đã chọn:** _<CUDA / Metal / Vulkan / CPU>_
 - **Recommended model tier:** _<TinyLlama-1.1B / Qwen2.5-1.5B / Llama-3.2-3B / Qwen2.5-7B>_
@@ -33,10 +34,10 @@ _Answer here._
 
 > Paste bảng từ `benchmarks/01-quickstart-results.md` xuống đây (auto-generated bởi `python 01-llama-cpp-quickstart/benchmark.py`).
 
-| Model | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
-|---|--:|--:|--:|--:|--:|
-| (Q4_K_M) | | | | | |
-| (Q2_K)   | | | | | |
+| Model    | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
+| -------- | --------: | ----------------: | ----------------: | -------------------: | ------------------: |
+| (Q4_K_M) |           |                   |                   |                      |                     |
+| (Q2_K)   |           |                   |                   |                      |                     |
 
 **Một quan sát** (≤ 50 chữ): Q4_K_M vs Q2_K trên máy bạn — số liệu nói gì? Quality đáng đánh đổi không?
 
@@ -49,9 +50,9 @@ _Answer here._
 > Chạy 2 lần locust ở concurrency 10 và 50, paste tóm tắt bên dưới.
 
 | Concurrency | Total RPS | TTFB P50 (ms) | E2E P95 (ms) | E2E P99 (ms) | Failures |
-|--:|--:|--:|--:|--:|--:|
-| 10 | | | | | |
-| 50 | | | | | |
+| ----------: | --------: | ------------: | -----------: | -----------: | -------: |
+|          10 |           |               |              |              |          |
+|          50 |           |               |              |              |          |
 
 **Batching observation** (từ `record-metrics.py`): peak `llamacpp:n_busy_slots_per_decode` / `requests_processing` ở concurrency 50 = _<…>_, nghĩa là …
 
@@ -68,9 +69,9 @@ _Answer here._
 
 **Nơi tốn nhiều ms nhất** trong pipeline (đo bằng `time.perf_counter` trong `pipeline.py`):
 
-- embed: _<ms>_
-- retrieve: _<ms>_
-- llama-server: _<ms>_
+- embed: _`<ms>`_
+- retrieve: _`<ms>`_
+- llama-server: _`<ms>`_
 
 **Reflection** (≤ 60 chữ): bottleneck nằm ở đâu? Có khớp với kỳ vọng không?
 
