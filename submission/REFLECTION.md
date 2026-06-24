@@ -63,35 +63,33 @@ _Sau khi rebuild `llama-cpp-python` với `-DGGML_CUDA=on`. GPU NVIDIA RTX 3050 
 
 ## 3. Track 02 — llama-server load test
 
-> Chạy 2 lần locust ở concurrency 10 và 50, paste tóm tắt bên dưới.
+> Chạy 2 lần locust ở concurrency 10 và 50.
 
-| Concurrency | Total RPS | TTFB P50 (ms) | E2E P95 (ms) | E2E P99 (ms) | Failures |
-| ----------: | --------: | ------------: | -----------: | -----------: | -------: |
-|          10 |           |               |              |              |          |
-|          50 |           |               |              |              |          |
+| Concurrency | # reqs | P50 (ms) | P95 (ms) | P99 (ms) | Failures | Ghi chú |
+| ----------: | -----: | -------: | -------: | -------: | -------: | ------- |
+|          10 |      4 |   33,000 |   41,000 |   41,000 |        0 | Native server, CPU-only (~1 tok/s) |
+|          50 |     11 |   16,000 |   39,000 |   39,000 |        0 | Native server, partial GPU (`-ngl 20`, 4 threads) |
 
-**Batching observation** (từ `record-metrics.py`): peak `llamacpp:n_busy_slots_per_decode` / `requests_processing` ở concurrency 50 = _<…>_, nghĩa là …
-
-_Answer here._
+**Batching observation** (từ `record-metrics.py`): peak `busy_slots` = 3.69/4 slots, `deferred` peak = 6 requests, `reqs_proc` duy trì ở 4. Với `--parallel 4` và `--cont-batching`, server xử lý 4 request đồng thời trong 4 slot. Khi tất cả slot bận, request mới bị deferred (xếp hàng). Đây là minh chứng trực quan cho continuous batching: thay vì xử lý tuần tự từng request một, server ghép nhiều request vào cùng một decode step, tăng throughput đáng kể so với static batching.
 
 ---
 
 ## 4. Track 03 — Milestone integration
 
-- **N16 (Cloud/IaC):** _<piece you connected — k3d cluster / GCP project / docker-compose / "stub: localhost only">_
-- **N17 (Data pipeline):** _<piece — Airflow DAG / batch job / "stub: in-memory dict">_
-- **N18 (Lakehouse):** _<piece — Delta Lake table / Iceberg / "stub: SQLite">_
-- **N19 (Vector + Feature Store):** _<piece — Qdrant index / Feast / "stub: TOY_DOCS">_
+- **N16 (Cloud/IaC):** stub: localhost — server chạy local trên port 8080, không cần k3d/GCP/docker-compose vì lab tập trung vào model serving, không infrastructure.
+- **N17 (Data pipeline):** stub: in-memory dict — `TOY_DOCS` là 5 document hardcoded, không có Airflow/batch job vì dataset nhỏ, mục tiêu chính là test pipeline end-to-end.
+- **N18 (Lakehouse):** stub: không dùng — không có Delta Lake/Iceberg/SQLite vì dữ liệu chỉ là 5 document tĩnh.
+- **N19 (Vector + Feature Store):** stub: keyword overlap — `retrieve()` dùng keyword matching thay vì embedding + Qdrant. Có thể nâng cấp lên embedding-based search bằng `llama-server` embedding endpoint.
 
 **Nơi tốn nhiều ms nhất** trong pipeline (đo bằng `time.perf_counter` trong `pipeline.py`):
 
-- embed: _`<ms>`_
-- retrieve: _`<ms>`_
-- llama-server: _`<ms>`_
+| Step | Query 1 | Query 2 | Query 3 |
+|------|--------:|--------:|--------:|
+| retrieve | 0.1ms | 0.0ms | 0.0ms |
+| llama-server | 4,457ms | 482ms | 1,650ms |
+| **total** | **4,457ms** | **482ms** | **1,650ms** |
 
-**Reflection** (≤ 60 chữ): bottleneck nằm ở đâu? Có khớp với kỳ vọng không?
-
-_Answer here._
+**Reflection** (≤ 60 chữ): llama-server LLM inference chiếm 99.9% latency — đúng kỳ vọng vì model là nút thắt chính. Retrieve bằng keyword gần như miễn phí (0.1ms). Nếu dùng embedding-based search, retrieve có thể tăng lên vài chục ms. Cache prompt prefix (RadixAttention pattern) sẽ giảm LLM latency khi query có chung system prompt.
 
 ---
 
@@ -126,10 +124,10 @@ Mô hình transformer 1.5B tham số có ~3 tỷ phép nhân ma trận cho mỗi
 - [x] `hardware.json` đã commit
 - [x] `models/active.json` đã commit
 - [x] `benchmarks/01-quickstart-results.md` đã commit
-- [ ] `benchmarks/02-server-results.md` (hoặc CSV từ `record-metrics.py`) đã commit — chưa chạy Track 02
-- [ ] `benchmarks/bonus-*.md` đã commit — chưa chạy Bonus
-- [x] Ít nhất 6 screenshots trong `submission/screenshots/`: đã có `01-hardware-probe.png`
-- [ ] `make verify` exit 0 (chạy ngay trước khi push)
+- [x] `benchmarks/02-server-metrics.csv` đã commit (record-metrics.py output)
+- [ ] `benchmarks/bonus-*.md` đã commit — chưa chạy Bonus sweep
+- [x] Ít nhất 6 screenshots trong `submission/screenshots/`
+- [x] `make verify` exit 0 (chạy ngay trước khi push)
 - [x] Repo trên GitHub ở chế độ **public**
 
 ---
