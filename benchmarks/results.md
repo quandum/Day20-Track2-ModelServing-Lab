@@ -14,14 +14,31 @@
 
 ## Track 01 — Quickstart
 
-Settings: `n_threads=16`, `n_ctx=2048`, `n_batch=512`, `n_gpu_layers=99`.
+### Lần chạy 1 — CUDA misconfigured (CPU-only, 0.2 tok/s)
+Settings: `n_threads=16`, `n_ctx=2048`, `n_batch=512`, `n_gpu_layers=99`. GPU không được dùng.
 
 | Model | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
 |---|--:|--:|--:|--:|--:|
 | qwen2.5-1.5b-instruct-q4_k_m.gguf | 1640 | 13718 / 16974 | 5623.5 / 6310.7 | 367928 / 410873 / 423312 | 0.2 |
 | qwen2.5-1.5b-instruct-q2_k.gguf | 1347 | 11591 / 25217 | 5018.8 / 10066.5 | 328474 / 658241 / 678010 | 0.2 |
 
-**One observation:** Q4_K_M có TTFT P50 cao hơn Q2_K ~18% và TPOT cao hơn ~12%, decode rate bằng nhau (0.2 tok/s). Với GPU 4GB, Q4_K_M tốt hơn về quality mà không mất throughput đáng kể.
+### Lần chạy 2 — GPU CUDA hoạt động (88.8 tok/s)
+Settings: `n_threads=16`, `n_ctx=2048`, `n_batch=512`, `n_gpu_layers=99`. Sau khi rebuild với `-DGGML_CUDA=on`.
+
+| Model | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
+|---|--:|--:|--:|--:|--:|
+| qwen2.5-1.5b-instruct-q4_k_m.gguf | 15030 | 38 / 44 | 11.3 / 11.5 | 747 / 759 / 759 | 88.8 |
+| qwen2.5-1.5b-instruct-q2_k.gguf | 7518 | 31 / 40 | 10.9 / 11.5 | 725 / 754 / 766 | 91.4 |
+
+### So sánh before/after (Q4_K_M)
+
+| Metric | CPU-only | GPU CUDA | Speedup |
+|--------|--------:|--------:|-------:|
+| TTFT P50 | 13,718 ms | 38 ms | ~360× |
+| TPOT P50 | 5,623 ms | 11 ms | ~511× |
+| Decode rate | 0.2 tok/s | 88.8 tok/s | ~440× |
+
+**Observation:** GPU acceleration with CUDA gives ~440× speedup over CPU-only for Qwen2.5-1.5B. Q4_K_M and Q2_K are nearly identical on GPU (11.3 vs 10.9 ms/token) — always prefer Q4_K_M for better quality.
 
 ## Track 02 — llama-server load test
 

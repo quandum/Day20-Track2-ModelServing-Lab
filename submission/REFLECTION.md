@@ -24,7 +24,7 @@
 - **llama.cpp backend đã chọn:** CUDA
 - **Recommended model tier:** Qwen2.5-1.5B-Instruct
 
-**Setup story** (≤ 80 chữ): Dùng WSL2 với Ubuntu 24.04, cài CUDA Toolkit 12.x cho RTX 3050 Ti. Build llama-cpp-python với flag `-DGGML_CUDA=on`. Download model Qwen2.5-1.5B-Instruct GGUF (Q4_K_M) từ Hugging Face qua script `download-model.py`.
+**Setup story** (≤ 80 chữ): Dùng WSL2 + Ubuntu 24.04, cài CUDA Toolkit 12.x. Lần đầu build llama-cpp-python không đúng cách (cài prebuilt wheel từ PyPI) → GPU không được dùng → 0.2 tok/s. Fix: rebuild với `CMAKE_ARGS="-DGGML_CUDA=on" pip install --force-reinstall` → GPU hoạt động → 88.8 tok/s.
 
 ---
 
@@ -32,12 +32,32 @@
 
 > Auto-generated bởi `python 01-llama-cpp-quickstart/benchmark.py`. Settings: `n_threads=16`, `n_ctx=2048`, `n_batch=512`, `n_gpu_layers=99`.
 
+### Lần chạy 1 — CUDA misconfigured (CPU-only, 0.2 tok/s)
+_llama-cpp-python không được build với CUDA → GPU không được dùng → chạy trên CPU thuần._
+
 | Model | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
 | --- | ---: | ---: | ---: | ---: | ---: |
 | qwen2.5-1.5b-instruct-q4_k_m.gguf | 1640 | 13718 / 16974 | 5623.5 / 6310.7 | 367928 / 410873 / 423312 | 0.2 |
 | qwen2.5-1.5b-instruct-q2_k.gguf | 1347 | 11591 / 25217 | 5018.8 / 10066.5 | 328474 / 658241 / 678010 | 0.2 |
 
-**Một quan sát** (≤ 50 chữ): Q4_K_M có TTFT P50 cao hơn Q2_K ~18% và TPOT cao hơn ~12%, nhưng decode rate bằng nhau (0.2 tok/s). Với GPU 4GB, Q4_K_M cho quality tốt hơn mà không mất thêm throughput đáng kể.
+### Lần chạy 2 — GPU CUDA hoạt động (88.8 tok/s)
+_Sau khi rebuild `llama-cpp-python` với `-DGGML_CUDA=on`. GPU NVIDIA RTX 3050 Ti (4GB) được dùng đầy đủ._
+
+| Model | Load (ms) | TTFT P50/P95 (ms) | TPOT P50/P95 (ms) | E2E P50/P95/P99 (ms) | Decode rate (tok/s) |
+| --- | ---: | ---: | ---: | ---: | ---: |
+| qwen2.5-1.5b-instruct-q4_k_m.gguf | 15030 | 38 / 44 | 11.3 / 11.5 | 747 / 759 / 759 | 88.8 |
+| qwen2.5-1.5b-instruct-q2_k.gguf | 7518 | 31 / 40 | 10.9 / 11.5 | 725 / 754 / 766 | 91.4 |
+
+### So sánh trước-sau (Q4_K_M)
+
+| Metric | CPU-only | GPU CUDA | Speedup |
+|--------|--------:|--------:|-------:|
+| TTFT P50 | 13,718 ms | **38 ms** | **~360×** |
+| TPOT P50 | 5,623 ms | **11 ms** | **~511×** |
+| Decode rate | 0.2 tok/s | **88.8 tok/s** | **~440×** |
+| E2E P50 | 367,928 ms (~6 phút) | **747 ms** | **~492×** |
+
+**Một quan sát** (≤ 50 chữ): Khi GPU hoạt động đúng, TTFT giảm từ 13.7s → 38ms, decode rate từ 0.2 → 88.8 tok/s. Q4_K_M và Q2_K gần như tương đương trên GPU (11.3 vs 10.9 ms/token) — nên dùng Q4_K_M cho quality tốt hơn.
 
 ---
 
@@ -79,27 +99,25 @@ _Answer here._
 
 > **Most important section.** Pick **một** thay đổi từ bonus track (build flag, thread sweep, quant pick, GPU offload, KV-cache quantization, speculative decoding, bất cứ challenge nào trong `BONUS-llama-cpp-optimization/CHALLENGES.md`) đã tạo ra speedup lớn nhất trên máy bạn.
 
-**Change:** _<vd: rebuild llama.cpp với `-DGGML_NATIVE=ON -DGGML_BLAS=ON`; vd: hạ `-t` từ 12 xuống 6; vd: bật Metal trên M2>_
+**Change:** Rebuild `llama-cpp-python` với `CMAKE_ARGS="-DGGML_CUDA=on"` thay vì dùng prebuilt wheel từ PyPI — chuyển từ CPU-only sang GPU CUDA.
 
-**Before vs after** (paste 2-3 dòng từ sweep output):
+**Before vs after** (Q4_K_M, 64 tokens):
 
 ```
-before: <số liệu>
-after:  <số liệu>
-speedup: ~<X.Y>×
+before (CPU-only):         TTFT=13,718ms  TPOT=5,623ms  decode=0.2 tok/s
+after (GPU CUDA, -ngl 99): TTFT=38ms      TPOT=11ms     decode=88.8 tok/s
+speedup: ~440× (decode rate)
 ```
 
 **Tại sao nó work** (1–2 đoạn ngắn — đây là phần grader đọc kỹ nhất):
 
-_Giải thích như đang nói với một bạn cùng lớp đang ngồi cạnh. Tránh "vibes-based" reasoning — bám vào mô hình mental của hardware (memory bandwidth? compute? cache?). Nếu kết quả khác kỳ vọng từ deck, nói rõ — đó là phần grader thưởng điểm._
+Mô hình transformer 1.5B tham số có ~3 tỷ phép nhân ma trận cho mỗi token. Trên CPU (i7-1260P, 16 cores, ~50 GB/s memory bandwidth), mỗi lần đọc trọng số model từ RAM qua bus DDR4 mất ~30ms — đó là lý do TPOT 5.6 giây. GPU RTX 3050 Ti có 4GB VRAM với băng thông ~192 GB/s và 2560 CUDA cores — trọng số 1.5B model (~1.1GB ở Q4_K_M) nằm gọn trong VRAM, mỗi phép nhân ma trận được xử lý song song trên hàng nghìn cores. Kết quả: prefill (TTFT) từ 13.7s → 38ms. Bài học: với model ≤7B, GPU offload là thay đổi duy nhất có impact lớn nhất — thread tuning chỉ cho speedup ~10-20%.
 
 ---
 
 ## 6. (Optional) Điều ngạc nhiên nhất
 
-_(1–2 câu — không bắt buộc, nhưng người grader đọc tất cả)_
-
-_Answer here._
+Điều ngạc nhiên nhất là khi GPU hoạt động đúng, Q4_K_M và Q2_K gần như tương đương về tốc độ (11.3 vs 10.9 ms/token) — trên CPU thì Q4_K_M chậm hơn ~12%. Với GPU, quality cao hơn mà không mất throughput, nên không có lý do gì để dùng Q2_K nếu đã có GPU.
 
 ---
 
