@@ -11,6 +11,7 @@ Usage:
 from __future__ import annotations
 
 import json
+import os
 import re
 import subprocess
 import sys
@@ -69,7 +70,7 @@ TIERS: dict[str, dict] = {
 
 LLAMA_BENCH = Path("BONUS-llama-cpp-optimization/llama.cpp/build/bin/llama-bench")
 LLAMA_BENCH_EXE = LLAMA_BENCH.with_suffix(".exe")
-TG_RE = re.compile(r"\|\s*tg128\s*\|\s*([0-9.]+)\s*±")
+TG_RE = re.compile(r"\|\s*tg[0-9]+\s*\|\s*([0-9.]+)\s*±")
 
 
 def find_bench() -> Path:
@@ -110,7 +111,7 @@ def run_bench(bench: Path, model: Path, threads: int, n_gpu: int) -> float:
 def main() -> int:
     bench = find_bench()
     hw = json.loads(Path("hardware.json").read_text())
-    threads = hw["cpu"].get("cores_physical") or 4
+    threads = int(os.environ.get("LAB_N_THREADS", hw["cpu"].get("cores_physical") or 4))
     backends = hw.get("gpu", {}).get("backends", {})
     n_gpu = 99 if any(v for k, v in backends.items() if k != "cpu_only") else 0
     tier_key, tier = pick_tier_for_active()
