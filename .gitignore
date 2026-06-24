@@ -4,11 +4,12 @@ __pycache__/
 *.pyc
 .env
 .DS_Store
-
+.deepeval
 # Models — large, downloaded from Hugging Face. Manifest is committed.
 models/*
 !models/active.json
-
+*/__pycache__/
+*/*/__pycache__/
 # llama.cpp source build (bonus track) — heavy, not needed by grader
 BONUS-llama-cpp-optimization/llama.cpp/
 

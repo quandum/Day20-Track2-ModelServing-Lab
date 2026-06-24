@@ -1,0 +1,39 @@
+{
+  "cpu": {
+    "arch": "x86_64",
+    "cores_logical": 16,
+    "model": "12th Gen Intel(R) Core(TM) i7-1260P",
+    "avx2": true,
+    "avx512": false,
+    "neon": false,
+    "cores_physical": 16
+  },
+  "ram_gb": 15.5,
+  "gpu": {
+    "backends": {
+      "nvidia_cuda": true,
+      "amd_rocm": false,
+      "apple_metal": false,
+      "vulkan": false,
+      "cpu_only": false
+    },
+    "details": {
+      "nvidia": "NVIDIA GeForce RTX 3050 Ti Laptop GPU, 4096 MiB"
+    }
+  },
+  "docker": {
+    "docker": false,
+    "compose": false
+  },
+  "recommendation": {
+    "recommended_paths": [
+      "01-llama-cpp-quickstart",
+      "02-llama-cpp-server",
+      "03-milestone-integration",
+      "BONUS-llama-cpp-optimization"
+    ],
+    "recommended_model": "Qwen2.5-1.5B-Instruct (Q4_K_M)",
+    "llama_cpp_backend": "CUDA",
+    "llama_cpp_cmake_flag": "-DGGML_CUDA=on"
+  }
+}
